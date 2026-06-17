@@ -1,11 +1,18 @@
 use serde_json::{Value, Map};
 use std::fs;
+use std::path::Path;
 
 /// IronClaw Custom Skill: Cleans and formats messy or scraped JSON data payloads 
 /// within the agent's sandboxed local workspace filesystem.
 pub fn clean_workspace_json(file_path: &str) -> Result<String, String> {
+    // SECURITY GUARD: Prevent path traversal vulnerabilities
+    let path = Path::new(file_path);
+    if path.components().any(|c| c == std::path::Component::ParentDir) {
+        return Err("Security Error: Path traversal attempt detected. Access denied.".to_string());
+    }
+
     // Read the file securely from the workspace path
-    let data = fs::read_to_string(file_path)
+    let data = fs::read_to_string(path)
         .map_err(|e| format!("Failed to read workspace file: {}", e))?;
         
     // Parse the data framework into a structural JSON value
